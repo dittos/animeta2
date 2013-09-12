@@ -1,0 +1,11 @@
+{% extends 'library/_base.html' %}
+
+{% block library_content %}
+<h2>{{ item.title }}</h2>
+
+<ul>
+{% for update in updates %}
+    <li>{{ update.progress }}: {{ update.comment }}</li>
+{% endfor %}
+</ul>
+{% endblock %}

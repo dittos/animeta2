@@ -1,0 +1,16 @@
+{% extends 'library/_base.html' %}
+
+{% block library_content %}
+<p>작품이 {{ count }}개 등록되어 있습니다.</p>
+
+<ul>
+{% for item in items %}
+    <li>
+        <a href="{{ url_for('.item_detail', id=item.id) }}">
+            {{ item.title }}
+            {{ item.progress }}
+        </a>
+    </li>
+{% endfor %}
+</ul>
+{% endblock %}
