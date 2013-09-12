@@ -1,9 +1,16 @@
+from django.conf import settings; settings.configure(); del settings
+from django.contrib.auth.hashers import check_password
+from flask.ext.login import UserMixin
 from animeta import db
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = 'auth_user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.Unicode(30), nullable=False)
+    password = db.Column(db.String(128), nullable=False)
+
+    def check_password(self, password):
+        return check_password(password, self.password)
 
 class Work(db.Model):
     __tablename__ = 'work_work'

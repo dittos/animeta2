@@ -1,0 +1,10 @@
+{% extends '_base.html' %}
+
+{% block content %}
+<form method="post">
+    <input name="username" placeholder="아이디">
+    <input type="password" name="password" placeholder="암호">
+    <label><input type="checkbox" name="remember" value="1"> 자동 로그인</label>
+    <button type="submit">로그인</button>
+</form>
+{% endblock %}

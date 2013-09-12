@@ -1,2 +1,11 @@
+<header>
+{% if current_user.is_authenticated() %}
+    {{ current_user.username }}
+    <a href="{{ url_for('auth.logout') }}">로그아웃</a>
+{% else %}
+    <a href="{{ url_for('auth.login') }}">로그인</a>
+{% endif %}
+</header>
+
 {% block content %}
 {% endblock %}
