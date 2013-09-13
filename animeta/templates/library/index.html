@@ -9,6 +9,7 @@
         <a href="{{ url_for('.item_detail', id=item.id) }}">
             {{ item.title }}
             {{ item.progress }}
+            ({{ item.status }})
         </a>
     </li>
 {% endfor %}

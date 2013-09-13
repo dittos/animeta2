@@ -8,4 +8,6 @@ MarkupSafe==0.18
 SQLAlchemy==0.8.2
 Werkzeug==0.9.4
 itsdangerous==0.23
+psycopg2==2.5.1
+pytz>=2013d
 wsgiref==0.1.2

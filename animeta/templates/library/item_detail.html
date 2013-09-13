@@ -3,9 +3,26 @@
 {% block library_content %}
 <h2>{{ item.title }}</h2>
 
+{% if current_user == item.user %}
+<h3>Status Update</h3>
+<form method="post" action="{{ url_for('.update_item', id=item.id) }}">
+{% for status in ['watching', 'finished', 'suspended', 'interested'] %}
+    <label><input type="radio" name="status" value="{{ status }}"{% if status == item.status %} checked{% endif %}> {{ status }}</label>
+{% endfor %}
+    <button type="submit">저장</button>
+</form>
+
+<h3>Progress Update</h3>
+<form method="post" action="{{ url_for('.create_update', id=item.id) }}">
+    <input type="text" name="progress" value="{{ item.progress }}">화<br>
+    <textarea name="comment"></textarea><br>
+    <button type="submit">등록</button>
+</form>
+{% endif %}
+
 <ul>
 {% for update in updates %}
-    <li>{{ update.progress }}: {{ update.comment }}</li>
+    <li>{{ update.progress }} ({{ update.status }}): {{ update.comment }} @ {{ update.updated_at }}</li>
 {% endfor %}
 </ul>
 {% endblock %}
