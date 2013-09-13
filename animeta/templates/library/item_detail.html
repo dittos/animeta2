@@ -22,7 +22,13 @@
 
 <ul>
 {% for update in updates %}
-    <li>{{ update.progress }} ({{ update.status }}): {{ update.comment }} @ {{ update.updated_at }}</li>
+    <li>
+        {{ update.progress }} ({{ update.status }}):
+        {{ update.comment }} @ {{ update.updated_at }}
+        <form method="post" action="{{ url_for('.delete_update', id=update.id, _method='POST') }}" onsubmit="return confirm('정말로 삭제하시겠습니까?')">
+            <button type="submit">x</button>
+        </form>
+    </li>
 {% endfor %}
 </ul>
 {% endblock %}

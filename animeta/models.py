@@ -3,7 +3,6 @@ import datetime
 import pytz
 from django.conf import settings; settings.configure(); del settings
 from django.contrib.auth.hashers import check_password
-from sqlalchemy import event
 from flask.ext.login import UserMixin
 from animeta import db
 
@@ -82,24 +81,23 @@ class LibraryItem(db.Model):
     user = db.relationship(User, backref=db.backref('library_items', lazy='dynamic'))
     work = db.relationship(Work, backref=db.backref('library_items', lazy='dynamic'))
     updates = db.relationship(Update, primaryjoin=db.and_(
-        Update.user_id == db.foreign(user_id),
-        Update.work_id == db.foreign(work_id)
-    ), lazy='dynamic', uselist=True, backref=db.backref('library_item', uselist=False))
+            Update.user_id == db.foreign(user_id),
+            Update.work_id == db.foreign(work_id)
+        ), viewonly=True, lazy='dynamic', uselist=True,
+        backref=db.backref('library_item', uselist=False))
 
-@event.listens_for(LibraryItem.updates, 'append')
-def append_update(item, update, initiator):
-    # Update denormalized columns
-    item.progress = update.progress
-    item.updated_at = update.updated_at
+    def add_update(self, update):
+        update.user = self.user
+        update.work = self.work
 
-    # Assign relationship
-    update.user_id = item.user_id
-    update.work_id = item.work_id
+        # Update denormalized columns
+        self.progress = update.progress
+        self.updated_at = update.updated_at
 
-@event.listens_for(LibraryItem.updates, 'remove')
-def remove_update(item, update, initiator):
-    last_updates = item.updates.order_by(Update.id.desc())[:2]
-    if len(last_updates) < 2:
-        item.progress = ''
-    else:
-        item.progress = last_updates[1].progress
+    def remove_update(self, update):
+        last_update = (self.updates.filter(Update.id != update.id)
+                           .order_by(Update.id.desc()).first())
+        if last_update:
+            self.progress = last_update.progress
+        else:
+            self.progress = ''

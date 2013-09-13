@@ -42,6 +42,19 @@ def create_update(id):
         progress=flask.request.form['progress'],
         comment=flask.request.form['comment'],
     )
-    item.updates.append(update)
+    item.add_update(update)
+    db.session.commit()
+    return flask.redirect(flask.url_for('.item_detail', id=item.id))
+
+@bp.route('/updates/<id>', methods=['DELETE'])
+@bp.route('/updates/<id>/delete', methods=['POST'])
+@login_required
+def delete_update(id):
+    update = models.Update.query.get_or_404(id)
+    if update.user != current_user:
+        flask.abort(403)
+    item = update.library_item
+    item.remove_update(update)
+    db.session.delete(update)
     db.session.commit()
     return flask.redirect(flask.url_for('.item_detail', id=item.id))
