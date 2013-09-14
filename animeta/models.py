@@ -3,6 +3,7 @@ import datetime
 import pytz
 from django.conf import settings; settings.configure(); del settings
 from django.contrib.auth.hashers import check_password
+from sqlalchemy.ext.associationproxy import association_proxy
 from flask.ext.login import UserMixin
 from animeta import db
 
@@ -18,7 +19,17 @@ class User(UserMixin, db.Model):
 class Work(db.Model):
     __tablename__ = 'work_work'
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.Unicode(100), nullable=False, index=True)
+    canonical_title = db.Column('title', db.Unicode(100), nullable=False, index=True)
+
+    title_mappings = db.relationship('TitleMapping', backref=db.backref('work'))
+    titles = association_proxy('title_mappings', 'title')
+
+class TitleMapping(db.Model):
+    __tablename__ = 'work_titlemapping'
+    id = db.Column(db.Integer, primary_key=True)
+    work_id = db.Column(db.Integer, db.ForeignKey(Work.id), nullable=False)
+    title = db.Column(db.Unicode(100), nullable=False)
+    key = db.Column(db.Unicode(100), nullable=False)
 
 class StatusType(db.TypeDecorator):
     impl = db.Integer
