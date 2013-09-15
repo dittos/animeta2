@@ -1,4 +1,21 @@
+@import "elements.less";
+
 @main-color: #4bb000;
+@mono-color: #555;
+@round: 4px;
+
+body {
+    font-size: 14px;
+    font-family: sans-serif;
+}
+
+a {
+    color: #4bb000;
+    text-decoration: none;
+    &:hover {
+        text-decoration: underline;
+    }
+}
 
 .container {
     width: 960px;
@@ -7,4 +24,107 @@
 
 header {
     border-bottom: 1px solid @main-color;
+    overflow: hidden;
+    line-height: 64px;
+    vertical-align: middle;
+    font-size: 1.2em;
+
+    .logo {
+        float: left;
+        img {
+            vertical-align: middle;
+        }
+    }
+    .nav-account {
+        float: right;
+    }
+    .btn-login {
+        vertical-align: middle;
+        display: inline-block;
+        padding: 8px;
+        height: 16px;
+        line-height: 16px;
+        background-color: @main-color;
+        color: #fff;
+        text-decoration: none;
+        .rounded (@round);
+        .transition (0.1s, linear);
+        &:hover {
+            background-color: lighten(@main-color, 5%);
+        }
+    }
+}
+
+.nav {
+    h1 {
+        font-size: 1.8em;
+        a {
+            vertical-align: middle;
+            color: @mono-color;
+        }
+    }
+}
+
+.library-item-list {
+    .group {
+        clear: both;
+        border-top: 1px solid #ccc;
+        padding: 8px 0;
+
+        h2 {
+            float: left;
+            font-size: 1.1em;
+            font-weight: normal;
+            color: @mono-color;
+            margin: 8px 0;
+        }
+
+        ul {
+            margin: 0 0 0 ((40px + 10px) * 3);
+            padding: 0;
+            list-style: none;
+        }
+    }
+
+    .item {
+        font-size: 1.1em;
+        padding: 4px 0;
+
+        a {
+            display: inline-block;
+            margin-top: -1px;
+            margin-left: -9px;
+            padding: 4px 8px;
+            color: lighten(@mono-color, 25%);
+            .rounded (@round);
+            border: 1px solid #fff;
+            &:hover {
+                text-decoration: none;
+                background-color: #f2f2f2;
+                border-color: #ddd;
+                text-shadow: 0 1px 0 #fff;
+            }
+        }
+
+        .status {
+            font-weight: bold;
+            margin-left: 0.5em;
+        }
+    }
+    
+    .item-watching {
+        font-weight: bold;
+
+        a {
+            color: @mono-color;
+        }
+
+        .status {
+            color: @main-color;
+        }
+    }
+
+    .progress-muted {
+        font-weight: normal;
+    }
 }

@@ -1,7 +1,9 @@
 {% extends '_base.html' %}
 
 {% block content %}
-    <h1><a href="{{ url_for('.index', username=user.username) }}">{{ user.username }} 사용자</a></h1>
+    <div class="nav">
+        <h1><a href="{{ url_for('.index', username=user.username) }}">{{ user.username }}</a></h1>
+    </div>
 
     {% block library_content %}
     {% endblock %}

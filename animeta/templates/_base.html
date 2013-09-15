@@ -17,16 +17,16 @@
 <body>
 <header>
     <div class="container">
-        <a href="/" class="navbar-brand">animeta</a>
+        <a href="/" class="logo"><img src="{{ url_for('static', filename='img/logo.gif') }}" alt="animeta"></a>
 
-        <ul class="nav navbar-nav navbar-right">
+        <div class="nav-account">
         {% if current_user.is_authenticated() %}
-            <li><a href="{{ url_for('library.index', username=current_user.username) }}">{{ current_user.username }}</a></li>
-            <li><a href="{{ url_for('auth.logout') }}">로그아웃</a></li>
+            <a href="{{ url_for('library.index', username=current_user.username) }}">{{ current_user.username }}</a>
+            <a href="{{ url_for('auth.logout') }}">로그아웃</a>
         {% else %}
-            <li><a href="{{ url_for('auth.login') }}" class="btn-login">로그인</a></li>
+            <a href="{{ url_for('auth.login') }}" class="btn-login">로그인</a>
         {% endif %}
-        </ul>
+        </div>
     </div>
 </header>
 
