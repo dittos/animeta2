@@ -11,6 +11,11 @@ bp = flask.Blueprint('library', __name__)
 def serialize(obj):
     return flask.Markup(serializer.serialize(obj))
 
+def serialize_response(obj):
+    rv = flask.make_response(serializer.serialize(obj))
+    rv.mimetype = 'application/json'
+    return rv
+
 @bp.route('/users/<username>/')
 def index(username):
     user = models.User.query.filter_by(username=username).first_or_404()
@@ -20,16 +25,12 @@ def index(username):
         items=items,
     )
 
-@bp.route('/records/<id>/')
+@bp.route('/items/<id>/updates')
 def item_detail(id):
     item = models.LibraryItem.query.get_or_404(id)
-    return flask.render_template('library/item_detail.html',
-        user=item.user,
-        item=item,
-        updates=item.updates.order_by(models.Update.id.desc()),
-    )
+    return serialize_response(item.updates.order_by(models.Update.id.desc()))
 
-@bp.route('/records/<id>/', methods=['POST'])
+@bp.route('/items/<id>', methods=['POST'])
 @login_required
 def update_item(id):
     item = models.LibraryItem.query.get_or_404(id)
@@ -37,9 +38,9 @@ def update_item(id):
         flask.abort(403)
     item.status = flask.request.form['status']
     db.session.commit()
-    return flask.redirect(flask.url_for('.item_detail', id=item.id))
+    return flask.jsonify(ok=True)
 
-@bp.route('/records/<id>/updates', methods=['POST'])
+@bp.route('/items/<id>/updates', methods=['POST'])
 @login_required
 def create_update(id):
     item = models.LibraryItem.query.get_or_404(id)
@@ -51,7 +52,7 @@ def create_update(id):
     )
     item.add_update(update)
     db.session.commit()
-    return flask.redirect(flask.url_for('.item_detail', id=item.id))
+    return serialize_response(update)
 
 @bp.route('/updates/<id>', methods=['DELETE'])
 @bp.route('/updates/<id>/delete', methods=['POST'])
@@ -64,4 +65,4 @@ def delete_update(id):
     item.remove_update(update)
     db.session.delete(update)
     db.session.commit()
-    return flask.redirect(flask.url_for('.item_detail', id=item.id))
+    return flask.jsonify(ok=True)

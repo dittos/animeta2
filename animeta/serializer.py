@@ -39,7 +39,11 @@ class ObjectSerializer(object):
 
 class LibraryItemSerializer(ObjectSerializer):
     cls = models.LibraryItem
-    fields = ('id', 'title', 'progress', 'status', 'updated_at')
+    fields = ('id', 'user_id', 'title', 'progress', 'status', 'updated_at')
+
+class UpdateSerializer(ObjectSerializer):
+    cls = models.Update
+    fields = ('id', 'progress', 'status', 'updated_at', 'comment')
 
 def default(obj):
     try:

@@ -44,8 +44,49 @@
 </script>
 
 <script type="text/x-handlebars" data-template-name="library/item">
-<h1>{{title}}</h1>
-<button {{action 'close'}}>Close</button>
+<h1>{{title}} <button {{action 'close'}}>Close</button></h1>
+
+{{#if canEdit}}
+<div>
+    <label>
+        {{view App.RadioButton name='status'
+                               selectionBinding='model.status'
+                               value='watching'}}
+        보는 중
+    </label>
+    <label>
+        {{view App.RadioButton name='status'
+                               selectionBinding='model.status'
+                               value='finished'}}
+        완료
+    </label>
+    <label>
+        {{view App.RadioButton name='status'
+                               selectionBinding='model.status'
+                               value='suspended'}}
+        중단
+    </label>
+</div>
+
+<div>
+    {{view Ember.TextField valueBinding='newUpdate.progress'}}{{newUpdate.progressSuffix}}<br>
+    {{view Ember.TextArea valueBinding='newUpdate.comment'}}<br>
+    <button {{action 'saveUpdate'}}>등록</button>
+</div>
+{{/if}}
+
+<ul>
+{{#each updates itemController='update'}}
+    <li>
+        {{progressText}} ({{status}}):
+        {{comment}}
+        {{updatedAtFromNow}}
+        {{#if canEdit}}
+            <button {{action 'delete'}}>x</button>
+        {{/if}}
+    </li>
+{{/each}}
+</ul>
 </script>
 {% endraw %}
 {% endblock %}
@@ -57,6 +98,7 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/moment.min.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/library.js') }}"></script>
 <script>
+App.CURRENT_USER_ID = {{ (current_user.id or None)|tojson }};
 App.DATA_ITEMS = {{ items|serialize }}.map(function(data) {
     data.updatedAt = new Date(data.updatedAt * 1000);
     return App.LibraryItem.create(data);
