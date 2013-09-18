@@ -9,6 +9,7 @@ def serialize(obj, **kwargs):
     return flask.Markup(serializer.serialize(obj, **kwargs))
 
 @bp.route('/users/<username>/')
-def index(username):
+@bp.route('/users/<username>/<path:path>')
+def index(username, path=None):
     user = models.User.query.filter_by(username=username).first_or_404()
     return flask.render_template('library/index.html', user=user)

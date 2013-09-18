@@ -2,6 +2,15 @@ var App = Ember.Application.create({
     rootElement: '#app-root',
     LOG_TRANSITIONS: true
 });
+App.USERNAME = USERNAME;
+App.CURRENT_USERNAME = CURRENT_USERNAME;
+
+if (Modernizr.history) {
+    App.Router.reopen({
+        location: 'history',
+        rootURL: '/users/' + App.USERNAME + '/'
+    });
+}
 
 App.Router.map(function() {
     this.resource('library', {path: '/'}, function() {

@@ -101,9 +101,9 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/ember-1.0.0.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/ember-model-latest.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/moment.min.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='js/library.js') }}"></script>
 <script>
-App.USERNAME = {{ user.username|tojson }};
-App.CURRENT_USERNAME = {{ (current_user.id or None)|tojson }};
+var USERNAME = {{ user.username|tojson }};
+var CURRENT_USERNAME = {{ (current_user.username or None)|tojson }};
 </script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/library.js') }}"></script>
 {% endblock %}
