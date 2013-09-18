@@ -1,44 +1,65 @@
 {% extends 'library/_base.html' %}
 
-{% macro status_text(status) %}
-{%- if status == 'watching' %}보는 중
-{%- elif status == 'finished' %}완료
-{%- elif status == 'suspended' %}중단
-{%- elif status == 'interested' %}관심
-{%- endif -%}
-{% endmacro %}
-
-{% macro render_status(item) %}
-{% if item.status == 'watching' %}
-    {% if item.progress %}
-        {{ item.progress }}화
-    {% else %}
-        보는 중
-    {% endif %}
-{% else %}
-    {{ status_text(item.status) }}
-    {% if item.progress %}<span class="progress-muted">@ {{ item.progress }}화</span>{% endif %}
-{% endif %}
-{% endmacro %}
-
 {% block library_content %}
-<p>작품이 {{ count }}개 등록되어 있습니다.</p>
+<div id="app-root"></div>
+
+{% raw %}
+<script type="text/x-handlebars" data-template-name="components/item-status">
+    {{#if isWatching}}
+        {{#if hasProgress}}
+            {{progressText}}
+        {{else}}
+            {{statusText}}
+        {{/if}}
+    {{else}}
+        {{statusText}}
+        {{#if hasProgress}}
+            <span class="progress-muted">@ {{progressText}}</span>
+        {{/if}}
+    {{/if}}
+</script>
+
+<script type="text/x-handlebars" data-template-name="library">
+<p>작품이 {{length}}개 등록되어 있습니다.</p>
+
+{{outlet}}
 
 <div class="library-item-list">
-{% for key, items in item_groups %}
+{{#each sectionedContents}}
     <div class="group">
-        <h2>{{ key or '?' }}</h2>
+        <h2>{{header}}</h2>
         <ul>
-        {% for item in items %}
-            <li class="item item-{{ item.status }}">
-                <a href="{{ url_for('.item_detail', id=item.id) }}">
-                    {{ item.title }}
-                    <span class="status">{{ render_status(item) }}</span>
-                </a>
+        {{#each items}}
+            <li {{bind-attr class=":item status"}}>
+                {{#link-to 'library.item' this}}
+                    {{title}}
+                    {{item-status status=status progress=progress}}
+                {{/link-to}}
             </li>
-        {% endfor %}
+        {{/each}}
         </ul>
     </div>
-{% endfor %}
+{{/each}}
 </div>
+</script>
+
+<script type="text/x-handlebars" data-template-name="library/item">
+<h1>{{title}}</h1>
+<button {{action 'close'}}>Close</button>
+</script>
+{% endraw %}
+{% endblock %}
+
+{% block js %}
+{{ super() }}
+<script type="text/javascript" src="{{ url_for('static', filename='js/handlebars-1.0.0.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/ember-1.0.0.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/moment.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/library.js') }}"></script>
+<script>
+App.DATA_ITEMS = {{ items|serialize }}.map(function(data) {
+    data.updated_at = new Date(data.updated_at * 1000);
+    return App.LibraryItem.create(data);
+});
+</script>
 {% endblock %}

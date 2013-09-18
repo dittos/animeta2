@@ -3,35 +3,13 @@ import datetime
 import itertools
 import flask
 from flask.ext.login import current_user, login_required
-from animeta import db, models
+from animeta import db, models, serializer
 
 bp = flask.Blueprint('library', __name__)
 
-def _date_header(date):
-    # 오늘/어제/그저께/그끄저께/이번 주/지난 주/이번 달/지난 달/YYYY-MM
-    today = datetime.date.today()
-    dt = lambda **kwargs: today - datetime.timedelta(**kwargs)
-    if date == today: return u'오늘'
-    elif date == dt(days=1): return u'어제'
-    elif date == dt(days=2): return u'그저께'
-    elif date == dt(days=3): return u'그끄저께'
-    elif date.isocalendar()[:2] == today.isocalendar()[:2]:
-        return u'이번 주'
-    elif date.isocalendar()[:2] == dt(weeks=1).isocalendar()[:2]:
-        return u'지난 주'
-    elif date.year == today.year and date.month == today.month:
-        return u'이번 달'
-    else:
-        last_month = (today.year, today.month - 1)
-        if last_month[1] == 0:
-            last_month = (last_month[0] - 1, 12)
-        if date.year == last_month[0] and date.month == last_month[1]:
-            return u'지난 달'
-        else:
-            return date.strftime('%Y/%m')
-
-def group_items(items):
-    return itertools.groupby(items, lambda item: _date_header(item.updated_at))
+@bp.app_template_filter()
+def serialize(obj):
+    return flask.Markup(serializer.serialize(obj))
 
 @bp.route('/users/<username>/')
 def index(username):
@@ -39,8 +17,7 @@ def index(username):
     items = user.library_items.order_by(models.LibraryItem.updated_at.desc().nullslast())
     return flask.render_template('library/index.html',
         user=user,
-        count=user.library_items.count(),
-        item_groups=group_items(items),
+        items=items,
     )
 
 @bp.route('/records/<id>/')
