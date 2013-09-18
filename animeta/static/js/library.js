@@ -202,7 +202,7 @@ App.LibraryItemRoute = Ember.Route.extend({
 App.LibraryItemController = Ember.ObjectController.extend({
     canEdit: function() {
         return App.USERNAME == App.CURRENT_USERNAME;
-    },
+    }.property(),
 
     newUpdate: function() {
         var progress = this.get('progress');

@@ -27,8 +27,8 @@ def item(id):
     return models.LibraryItem.query.get_or_404(id)
 
 @bp.route('/items/<id>', methods=['PUT'])
-@api_response()
 @login_required
+@api_response()
 def update_item(id):
     item = models.LibraryItem.query.get_or_404(id)
     if item.user != current_user:
@@ -38,8 +38,8 @@ def update_item(id):
     return item
 
 @bp.route('/updates', methods=['POST'])
-@api_response()
 @login_required
+@api_response()
 def create_update():
     id = flask.request.json['item_id']
     item = models.LibraryItem.query.get_or_404(id)
@@ -54,8 +54,8 @@ def create_update():
     return update
 
 @bp.route('/updates/<id>', methods=['DELETE'])
-@api_response()
 @login_required
+@api_response()
 def delete_update(id):
     update = models.Update.query.get_or_404(id)
     if update.user != current_user:
