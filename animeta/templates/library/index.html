@@ -58,7 +58,7 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/library.js') }}"></script>
 <script>
 App.DATA_ITEMS = {{ items|serialize }}.map(function(data) {
-    data.updated_at = new Date(data.updated_at * 1000);
+    data.updatedAt = new Date(data.updatedAt * 1000);
     return App.LibraryItem.create(data);
 });
 </script>

@@ -56,12 +56,12 @@ function getDateHeader(nativeDate) {
 }
 
 App.LibraryController = Ember.ArrayController.extend({
-    sortProperties: ['updated_at'],
+    sortProperties: ['updatedAt'],
     sortAscending: false,
     sectionedContents: function() {
         var sections = [], section = null;
         this.forEach(function(item) {
-            var h = getDateHeader(item.get('updated_at'));
+            var h = getDateHeader(item.get('updatedAt'));
             if (!section || section.header != h) {
                 if (section)
                     sections.push(section);
@@ -72,7 +72,7 @@ App.LibraryController = Ember.ArrayController.extend({
         if (section.items.length > 0)
             sections.push(section);
         return sections;
-    }.property('@each.updated_at')
+    }.property('@each.updatedAt')
 });
 
 App.STATUS_TEXTS = {
