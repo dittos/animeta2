@@ -69,9 +69,13 @@
 </div>
 
 <div>
+{{#if isWatching}}
     {{view Ember.TextField valueBinding='newUpdate.progress'}}{{newUpdate.progressSuffix}}<br>
     {{view Ember.TextArea valueBinding='newUpdate.comment'}}<br>
     <button {{action 'saveUpdate'}}>등록</button>
+{{else}}
+    기록을 추가하려면 감상 상태를 '보는 중'으로 바꿔주세요.
+{{/if}}
 </div>
 {{/if}}
 
@@ -95,13 +99,11 @@
 {{ super() }}
 <script type="text/javascript" src="{{ url_for('static', filename='js/handlebars-1.0.0.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/ember-1.0.0.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/ember-model-latest.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/moment.min.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/library.js') }}"></script>
 <script>
-App.CURRENT_USER_ID = {{ (current_user.id or None)|tojson }};
-App.DATA_ITEMS = {{ items|serialize }}.map(function(data) {
-    data.updatedAt = new Date(data.updatedAt * 1000);
-    return App.LibraryItem.create(data);
-});
+App.USERNAME = {{ user.username|tojson }};
+App.CURRENT_USERNAME = {{ (current_user.id or None)|tojson }};
 </script>
 {% endblock %}

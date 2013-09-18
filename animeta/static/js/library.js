@@ -9,35 +9,91 @@ App.Router.map(function() {
     });
 });
 
-App.LibraryItem = Ember.Object.extend({
-    saveStatus: function() {
-        return Ember.$.post('/items/' + this.get('id'), {status: this.get('status')});
+Ember.Model.reopenClass({
+    camelizeKeys: true
+});
+
+App.APIAdapter = Ember.RESTAdapter.extend({
+    buildURL: function(klass, id) {
+        var urlRoot = '/api/v2' + Ember.get(klass, 'url');
+        if (!urlRoot) { throw new Error('Ember.RESTAdapter requires a `url` property to be specified'); }
+        if (!Ember.isEmpty(id)) {
+            return urlRoot + "/" + id;
+        } else {
+            return urlRoot;
+        }
     }
 });
 
-App.Update = Ember.Object.extend({
+var UnixTimestamp = {
+    deserialize: function(value) {
+        return new Date(value * 1000);
+    }
+};
+
+var attr = Ember.attr, hasMany = Ember.hasMany, belongsTo = Ember.belongsTo;
+
+App.User = Ember.Model.extend({
+    id: attr(),
+    username: attr(),
+    items: hasMany('App.LibraryItem', {key: 'items', embedded: true})
+});
+App.User.url = '/users';
+App.User.primaryKey = 'username';
+App.User.adapter = App.APIAdapter.create();
+
+App.LibraryItem = Ember.Model.extend({
+    id: attr(),
+    title: attr(),
+    progress: attr(),
+    status: attr(),
+    updatedAt: attr(UnixTimestamp),
+    user: belongsTo('App.User', {key: 'user_id'}),
+    updates: hasMany('App.Update', {key: 'updates', embedded: true}),
+
+    isWatching: function() {
+        return this.get('status') == 'watching';
+    }.property('status'),
+
+    saveStatus: function() {
+        return this.constructor.adapter.saveStatus(this);
+    }
+});
+App.LibraryItem.url = '/items';
+App.LibraryItem.adapter = App.APIAdapter.extend({
+    saveStatus: function(record) {
+        var get = Ember.get;
+        var primaryKey = get(record.constructor, 'primaryKey'),
+        url = this.buildURL(record.constructor, get(record, primaryKey)),
+        self = this;
+
+        return Ember.$.ajax(url, {type: 'PUT', data: {status: record.get('status')}}).then(function(data) { // TODO: Some APIs may or may not return data
+            self.didSaveRecord(record, data);
+            return record;
+        });
+    }
+}).create();
+
+App.Update = Ember.Model.extend({
+    id: attr(),
+    progress: attr(),
+    status: attr(),
+    updatedAt: attr(UnixTimestamp),
+    comment: attr(),
+    item: belongsTo('App.LibraryItem', {key: 'item_id'}),
+
     progressSuffix: function() {
         return this.get('progress').match(/(^$)|([0-9]$)/) ? '화' : '';
     }.property('progress'),
-
-    save: function() {
-        var data = {
-            progress: this.get('progress'),
-            comment: this.get('comment')
-        };
-        var self = this;
-        return Ember.$.post('/items/' + this.get('item.id') + '/updates', data).then(function(d) {
-            // TODO: update item properties
-            d.updatedAt = new Date(d.updatedAt * 1000);
-            d.item = self.get('item');
-            return App.Update.create(d);
-        });
-    }
 });
+App.Update.url = '/updates';
+App.Update.adapter = App.APIAdapter.create();
 
 App.LibraryRoute = Ember.Route.extend({
     model: function() {
-        return App.DATA_ITEMS;
+        return App.User.fetch(App.USERNAME).then(function(user) {
+            return user.get('items');
+        });
     }
 });
 
@@ -119,20 +175,12 @@ App.ItemStatusComponent = Ember.Component.extend({
 
 App.LibraryItemRoute = Ember.Route.extend({
     model: function(params) {
-        return App.DATA_ITEMS.find(function(item) {
-            return item.get('id') == params.item_id;
-        });
+        return App.LibraryItem.fetch(params.item_id);
     },
 
     setupController: function(controller, model) {
+        model.reload();
         controller.set('model', model);
-        Ember.$.getJSON('/items/' + model.get('id') + '/updates').then(function(data) {
-            model.set('updates', data.map(function(data) {
-                data.updatedAt = new Date(data.updatedAt * 1000);
-                data.item = model;
-                return App.Update.create(data);
-            }));
-        });
     },
 
     actions: {
@@ -144,27 +192,40 @@ App.LibraryItemRoute = Ember.Route.extend({
 
 App.LibraryItemController = Ember.ObjectController.extend({
     canEdit: function() {
-        return this.get('userId') == App.CURRENT_USER_ID;
-    }.property('userId'),
+        return App.USERNAME == App.CURRENT_USERNAME;
+    },
 
     newUpdate: function() {
+        var progress = this.get('progress');
+        var m = progress.match(/([0-9]+)$/);
+        if (m) {
+            var n = parseInt(m[1], 10);
+            n++;
+            progress = progress.substr(0, m.index) + n;
+        }
         return App.Update.create({
             item: this.get('model'),
-            progress: this.get('progress')
+            progress: progress
         });
-    }.property('model'),
+    }.property('progress'),
 
     statusChanged: function() {
+        // Check if the value is really changed
+        // to prevent accidental save request.
+        var prev = this.get('prevStatus'),
+            changed = this.get('status');
+        this.set('prevStatus', changed);
+        if (prev == null || prev == changed)
+            return;
         this.get('model').saveStatus();
     }.observes('status'),
 
     actions: {
         saveUpdate: function() {
             var self = this;
-            var newUpdate = this.get('newUpdate');
-            newUpdate.save().then(function(update) {
-                self.get('updates').unshiftObject(update);
-                newUpdate.set('comment', '');
+            this.get('newUpdate').save().then(function(update) {
+                // XXX: expensive
+                self.get('model').reload();
             });
         }
     }
@@ -185,11 +246,12 @@ App.UpdateController = Ember.ObjectController.extend({
 
     actions: {
         delete: function() {
-            var self = this;
+            var update = this.get('model');
+            var parent = update.get('item.updates');
             if (confirm('정말로 삭제하시겠습니까?')) {
-                Ember.$.ajax('/updates/' + this.get('id'), {type: 'DELETE'}).then(function() {
-                    self.get('item.updates').removeObject(self.get('model'));
-                    // TODO: update item progress
+                update.deleteRecord().then(function() {
+                    // XXX: expensive
+                    update.get('item').reload();
                 });
             }
         }
