@@ -22,75 +22,101 @@
 <script type="text/x-handlebars" data-template-name="library">
 <p>작품이 {{length}}개 등록되어 있습니다.</p>
 
-{{outlet}}
-
 <div class="library-item-list">
 {{#each sectionedContents}}
     <div class="group">
         <h2>{{header}}</h2>
-        <ul>
+        <div class="items">
         {{#each items}}
-            <li {{bind-attr class=":item status"}}>
-                {{#link-to 'library.item' this}}
+        {{#unless open}}
+            <div {{bind-attr class=":item status"}}>
+                {{#link-to 'library.item' this class='title'}}
                     {{title}}
                     {{item-status status=status progress=progress}}
                 {{/link-to}}
-            </li>
+            </div>
+        {{else}}
+            {{render 'library.item' this}}
+        {{/unless}}
         {{/each}}
-        </ul>
+        </div>
     </div>
 {{/each}}
 </div>
 </script>
 
 <script type="text/x-handlebars" data-template-name="library/item">
-<h1>{{title}} <button {{action 'close'}}>Close</button></h1>
+<div class="item-detail">
+
+<div class="header">
+    <span class="title">{{title}}</span>
 
 {{#if canEdit}}
-<div>
-    <label>
-        {{view App.RadioButton name='status'
-                               selectionBinding='model.status'
-                               value='watching'}}
-        보는 중
-    </label>
-    <label>
-        {{view App.RadioButton name='status'
-                               selectionBinding='model.status'
-                               value='finished'}}
-        완료
-    </label>
-    <label>
-        {{view App.RadioButton name='status'
-                               selectionBinding='model.status'
-                               value='suspended'}}
-        중단
-    </label>
+    {{#view App.DropdownButton titleBinding='statusText' class='status-dropdown'}}
+        {{view App.CheckableDropdownItem title='보는 중' selectionBinding='status' value='watching'}}
+        {{view App.CheckableDropdownItem title='완료' selectionBinding='status' value='finished'}}
+        {{view App.CheckableDropdownItem title='중단' selectionBinding='status' value='suspended'}}
+    {{/view}}
+{{/if}}
+    
+    {{#link-to 'library' class='close'}}닫기{{/link-to}}
 </div>
 
-<div>
-{{#if isWatching}}
-    {{view Ember.TextField valueBinding='newUpdate.progress'}}{{newUpdate.progressSuffix}}<br>
-    {{view Ember.TextArea valueBinding='newUpdate.comment'}}<br>
-    <button {{action 'saveUpdate'}}>등록</button>
-{{else}}
-    기록을 추가하려면 감상 상태를 '보는 중'으로 바꿔주세요.
-{{/if}}
+{{#if canEdit}}
+<div class="update-form">
+    {{#if isWatching}}
+        <div class="about">
+            {{view App.AutoSelectTextField valueBinding='newUpdate.progress'}}{{newUpdate.progressSuffix}}에 대해 쓰기
+        </div>
+
+        {{view Ember.TextArea class='comment' rows=3 cols=40 valueBinding='newUpdate.comment'}}
+
+        <div class="actions">
+        <label>
+            {{view Ember.Checkbox}}
+            <i class="icon-twitter"></i>
+        </label>
+        <label>
+            {{view Ember.Checkbox}}
+            <i class="icon-facebook"></i>
+        </label>
+        <button {{action 'saveUpdate'}}><i class="icon-plus"></i> 기록 추가</button>
+        </div>
+    {{else}}
+        기록을 추가하려면 감상 상태를 '보는 중'으로 바꿔주세요.
+    {{/if}}
 </div>
 {{/if}}
 
-<ul>
+<div class="updates">
 {{#each updates itemController='update'}}
-    <li>
-        {{progressText}} ({{status}}):
-        {{comment}}
-        {{updatedAtFromNow}}
-        {{#if canEdit}}
-            <button {{action 'delete'}}>x</button>
+    <div class="update">
+        <div class="progress">
+        {{#unless shouldShowStatus}}
+            {{progressText}}
+        {{else}}
+            {{#if hasProgress}}
+                {{progressText}} ({{statusText}})
+            {{else}}
+                {{statusText}}
+            {{/if}}
+        {{/unless}}
+        </div>
+        <div class="body">
+        {{#if hasComment}}
+            <span class="comment">{{comment}}</span>
         {{/if}}
-    </li>
+            <span class="meta">
+                {{updatedAtFromNow}}
+                {{#if canEdit}}
+                    <button class="delete" {{action 'delete'}}><i class="icon-trash"></i></button>
+                {{/if}}
+            </span>
+        </div>
+    </div>
 {{/each}}
-</ul>
+</div>
+</div>
 </script>
 {% endraw %}
 {% endblock %}

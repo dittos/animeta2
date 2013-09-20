@@ -72,7 +72,11 @@ App.LibraryItem = Ember.Model.extend({
 
     saveStatus: function() {
         return this.constructor.adapter.saveStatus(this);
-    }
+    },
+
+    statusText: function() {
+        return App.STATUS_TEXTS[this.get('status')];
+    }.property('status')
 });
 App.LibraryItem.url = '/items';
 App.LibraryItem.adapter = App.APIAdapter.extend({
@@ -100,6 +104,25 @@ App.Update = Ember.Model.extend({
     progressSuffix: function() {
         return this.get('progress').match(/(^$)|([0-9]$)/) ? '화' : '';
     }.property('progress'),
+
+    isWatching: function() {
+        return this.get('status') == 'watching';
+    }.property('status'),
+
+    hasProgress: function() {
+        return this.get('progress').length > 0;
+    }.property('progress'),
+
+    progressText: function() {
+        var p = this.get('progress');
+        if (p.match(/[0-9]$/))
+            p += '화';
+        return p;
+    }.property('progress'),
+
+    statusText: function() {
+        return App.STATUS_TEXTS[this.get('status')];
+    }.property('status')
 });
 App.Update.url = '/updates';
 App.Update.adapter = App.APIAdapter.create();
@@ -154,14 +177,28 @@ App.LibraryController = Ember.ArrayController.extend({
         if (section.items.length > 0)
             sections.push(section);
         return sections;
-    }.property('@each.updatedAt')
+    }.property('@each.updatedAt'),
+
+    open: function(item) {
+        this.close();
+        this.set('openItem', item);
+        item.set('open', true);
+    },
+
+    close: function() {
+        var openItem = this.get('openItem');
+        if (openItem) {
+            openItem.set('open', false);
+            this.set('openItem', null);
+        }
+    }
 });
 
 App.STATUS_TEXTS = {
     watching: '보는 중',
     finished: '완료',
     suspended: '중단',
-    intersted: '관심'
+    interested: '관심'
 };
 
 App.ItemStatusComponent = Ember.Component.extend({
@@ -195,13 +232,16 @@ App.LibraryItemRoute = Ember.Route.extend({
 
     setupController: function(controller, model) {
         model.reload();
-        controller.set('model', model);
+        this.controllerFor('library').open(model);
+        //controller.set('model', model);
     },
 
-    actions: {
-        close: function() {
-            this.transitionTo('library');
-        }
+    renderTemplate: function() {
+        // DO NOTHING
+    },
+
+    deactivate: function() {
+        this.controllerFor('library').close();
     }
 });
 
@@ -246,11 +286,31 @@ App.LibraryItemController = Ember.ObjectController.extend({
     }
 });
 
+App.LibraryItemView = Ember.View.extend({
+    didInsertElement: function() {
+        var offset = this.$().offset().top;
+        var viewportHeight = Ember.$(window).height();
+        var viewportBegin = Ember.$(document).scrollTop();
+        var viewportEnd = viewportBegin + viewportHeight;
+        var margin = viewportHeight / 4;
+        if (offset < viewportBegin || offset > viewportEnd) {
+            Ember.$(document).scrollTop(offset - margin);
+        }
+    }
+});
+
 App.UpdateController = Ember.ObjectController.extend({
     needs: 'libraryItem',
 
+    shouldShowStatus: function() {
+        var s = this.get('status');
+        return s && s != 'watching';
+    }.property('status', 'progress'),
+
     progressText: function() {
-        return this.get('progress') + this.get('progressSuffix');
+        if (this.get('hasProgress'))
+            return this.get('progress') + this.get('progressSuffix');
+        return App.STATUS_TEXTS.watching;
     }.property('progress', 'progressSuffix'),
 
     updatedAtFromNow: function() {
@@ -258,6 +318,10 @@ App.UpdateController = Ember.ObjectController.extend({
     }.property('updatedAt'),
 
     canEdit: Ember.computed.alias('controllers.libraryItem.canEdit'),
+
+    hasComment: function() {
+        return this.get('comment').length > 0;
+    }.property('comment'),
 
     actions: {
         delete: function() {
@@ -283,4 +347,60 @@ App.RadioButton = Ember.View.extend({
     checked: function() {
         return this.get('value') == this.get('selection')
     }.property('selection')
+});
+
+App.AutoSelectTextField = Ember.TextField.extend({
+    focusIn: function() {
+        this.$().select();
+    }
+});
+
+App.CheckableDropdownItem = Ember.View.extend({
+    classNameBindings: [':dropdown-item', 'selected'],
+    template: Ember.Handlebars.compile('{{view.title}} {{#if view.selected}}<i class="icon-ok"></i>{{/if}}'),
+    click: function() {
+        this.set('selection', this.get('value'));
+    },
+    selected: function() {
+        return this.get('selection') == this.get('value');
+    }.property('selection')
+});
+
+App.DropdownButton = Ember.View.extend({
+    open: false,
+    classNameBindings: [':dropdown-container', 'open'],
+    layout: Ember.Handlebars.compile('{{#view view.button titleBinding="view.title"}}<i class="icon-gear"></i> {{view.title}} <i class="caret icon-caret-down"></i>{{/view}}{{#view view.dropdown}}{{yield}}{{/view}}'),
+    button: Ember.View.extend({
+        tagName: 'span',
+        classNames: ['btn-dropdown'],
+        mouseEnter: function() {
+            var parent = this.get('parentView');
+            if (parent)
+                parent.set('open', true);
+        },
+        mouseLeave: function() {
+            var parent = this.get('parentView');
+            if (parent)
+                parent.set('open', false);
+        }
+    }),
+    dropdown: Ember.View.extend({
+        tagName: 'div',
+        classNames: ['dropdown'],
+        mouseEnter: function() {
+            var parent = this.get('parentView');
+            if (parent)
+                parent.set('open', true);
+        },
+        mouseLeave: function() {
+            var parent = this.get('parentView');
+            if (parent)
+                parent.set('open', false);
+        },
+        click: function() {
+            var parent = this.get('parentView');
+            if (parent)
+                parent.set('open', false);
+        }
+    }),
 });
