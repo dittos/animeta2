@@ -37,6 +37,10 @@ App.APIAdapter = Ember.RESTAdapter.extend({
 var UnixTimestamp = {
     deserialize: function(value) {
         return new Date(value * 1000);
+    },
+
+    serialize: function(date) {
+        return date.getTime() / 1000;
     }
 };
 
