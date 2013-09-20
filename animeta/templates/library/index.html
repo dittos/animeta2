@@ -4,21 +4,6 @@
 <div id="app-root"></div>
 
 {% raw %}
-<script type="text/x-handlebars" data-template-name="components/item-status">
-    {{#if isWatching}}
-        {{#if hasProgress}}
-            {{progressText}}
-        {{else}}
-            {{statusText}}
-        {{/if}}
-    {{else}}
-        {{statusText}}
-        {{#if hasProgress}}
-            <span class="progress-muted">@ {{progressText}}</span>
-        {{/if}}
-    {{/if}}
-</script>
-
 <script type="text/x-handlebars" data-template-name="library">
 <p>작품이 {{length}}개 등록되어 있습니다.</p>
 
@@ -32,7 +17,7 @@
             <div {{bind-attr class=":item status"}}>
                 {{#link-to 'library.item' this class='title'}}
                     {{title}}
-                    {{item-status status=status progress=progress}}
+                    <span class="status">{{shortStatusSummary}}</span>
                 {{/link-to}}
             </div>
         {{else}}
@@ -91,17 +76,7 @@
 <div class="updates">
 {{#each updates itemController='update'}}
     <div class="update">
-        <div class="progress">
-        {{#unless shouldShowStatus}}
-            {{progressText}}
-        {{else}}
-            {{#if hasProgress}}
-                {{progressText}} ({{statusText}})
-            {{else}}
-                {{statusText}}
-            {{/if}}
-        {{/unless}}
-        </div>
+        <div class="progress">{{progressSummary}}</div>
         <div class="body">
         {{#if hasComment}}
             <span class="comment">{{comment}}</span>

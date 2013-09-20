@@ -46,6 +46,18 @@ var UnixTimestamp = {
     }
 };
 
+App.STATUS_TEXTS = {
+    watching: '보는 중',
+    finished: '완료',
+    suspended: '중단',
+    interested: '관심'
+};
+
+var PROGRESS_SUFFIX_RE = /([0-9])$/;
+App.appendProgressSuffix = function(progress) {
+    return progress.replace(PROGRESS_SUFFIX_RE, '$1화');
+}
+
 var attr = Ember.attr, hasMany = Ember.hasMany, belongsTo = Ember.belongsTo;
 
 App.User = Ember.Model.extend({
@@ -76,7 +88,15 @@ App.LibraryItem = Ember.Model.extend({
 
     statusText: function() {
         return App.STATUS_TEXTS[this.get('status')];
-    }.property('status')
+    }.property('status'),
+
+    shortStatusSummary: function() {
+        var p = this.get('progress'),
+            s = this.get('status');
+        if (s == 'watching' && p)
+            return App.appendProgressSuffix(p);
+        return App.STATUS_TEXTS[s];
+    }.property('progress', 'status')
 });
 App.LibraryItem.url = '/items';
 App.LibraryItem.adapter = App.APIAdapter.extend({
@@ -103,26 +123,7 @@ App.Update = Ember.Model.extend({
 
     progressSuffix: function() {
         return this.get('progress').match(/(^$)|([0-9]$)/) ? '화' : '';
-    }.property('progress'),
-
-    isWatching: function() {
-        return this.get('status') == 'watching';
-    }.property('status'),
-
-    hasProgress: function() {
-        return this.get('progress').length > 0;
-    }.property('progress'),
-
-    progressText: function() {
-        var p = this.get('progress');
-        if (p.match(/[0-9]$/))
-            p += '화';
-        return p;
-    }.property('progress'),
-
-    statusText: function() {
-        return App.STATUS_TEXTS[this.get('status')];
-    }.property('status')
+    }.property('progress')
 });
 App.Update.url = '/updates';
 App.Update.adapter = App.APIAdapter.create();
@@ -192,37 +193,6 @@ App.LibraryController = Ember.ArrayController.extend({
             this.set('openItem', null);
         }
     }
-});
-
-App.STATUS_TEXTS = {
-    watching: '보는 중',
-    finished: '완료',
-    suspended: '중단',
-    interested: '관심'
-};
-
-App.ItemStatusComponent = Ember.Component.extend({
-    tagName: 'span',
-    classNames: ['status'],
-
-    isWatching: function() {
-        return this.get('status') == 'watching';
-    }.property('status'),
-
-    hasProgress: function() {
-        return this.get('progress').length > 0;
-    }.property('progress'),
-
-    progressText: function() {
-        var p = this.get('progress');
-        if (p.match(/[0-9]$/))
-            p += '화';
-        return p;
-    }.property('progress'),
-
-    statusText: function() {
-        return App.STATUS_TEXTS[this.get('status')];
-    }.property('status')
 });
 
 App.LibraryItemRoute = Ember.Route.extend({
@@ -302,16 +272,18 @@ App.LibraryItemView = Ember.View.extend({
 App.UpdateController = Ember.ObjectController.extend({
     needs: 'libraryItem',
 
-    shouldShowStatus: function() {
-        var s = this.get('status');
-        return s && s != 'watching';
-    }.property('status', 'progress'),
-
-    progressText: function() {
-        if (this.get('hasProgress'))
-            return this.get('progress') + this.get('progressSuffix');
-        return App.STATUS_TEXTS.watching;
-    }.property('progress', 'progressSuffix'),
+    progressSummary: function() {
+        var p = this.get('progress'),
+            s = this.get('status');
+        if (p) {
+            var buf = App.appendProgressSuffix(p);
+            if (s && s != 'watching')
+                buf += ' (' + App.STATUS_TEXTS[s] + ')';
+            return buf;
+        } else {
+            return App.STATUS_TEXTS[s];
+        }
+    }.property('progress', 'status'),
 
     updatedAtFromNow: function() {
         return moment(this.get('updatedAt')).fromNow();
