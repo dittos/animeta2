@@ -1,3 +1,5 @@
+moment.lang('ko');
+
 var App = Ember.Application.create({
     rootElement: '#app-root',
     LOG_TRANSITIONS: true
