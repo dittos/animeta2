@@ -123,7 +123,28 @@ App.Update = Ember.Model.extend({
 
     progressSuffix: function() {
         return this.get('progress').match(/(^$)|([0-9]$)/) ? '화' : '';
-    }.property('progress')
+    }.property('progress'),
+
+    progressSummary: function() {
+        var p = this.get('progress'),
+            s = this.get('status');
+        if (p) {
+            var buf = App.appendProgressSuffix(p);
+            if (s && s != 'watching')
+                buf += ' (' + App.STATUS_TEXTS[s] + ')';
+            return buf;
+        } else {
+            return App.STATUS_TEXTS[s];
+        }
+    }.property('progress', 'status'),
+
+    updatedAtFromNow: function() {
+        return moment(this.get('updatedAt')).fromNow();
+    }.property('updatedAt'),
+
+    hasComment: function() {
+        return this.get('comment').length > 0;
+    }.property('comment')
 });
 App.Update.url = '/updates';
 App.Update.adapter = App.APIAdapter.create();
@@ -165,6 +186,7 @@ App.LibraryController = Ember.ArrayController.extend({
     sortProperties: ['updatedAt'],
     sortAscending: false,
     sectionedContents: function() {
+        console.log('sectionedContents');
         var sections = [], section = null;
         this.forEach(function(item) {
             var h = getDateHeader(item.get('updatedAt'));
@@ -252,6 +274,15 @@ App.LibraryItemController = Ember.ObjectController.extend({
                 // XXX: expensive
                 self.get('model').reload();
             });
+        },
+        delete: function(update) {
+            if (confirm('정말로 삭제하시겠습니까?')) {
+                var self = this;
+                update.deleteRecord().then(function() {
+                    // XXX: expensive
+                    self.get('model').reload();
+                });
+            }
         }
     }
 });
@@ -265,46 +296,6 @@ App.LibraryItemView = Ember.View.extend({
         var margin = viewportHeight / 4;
         if (offset < viewportBegin || offset > viewportEnd) {
             Ember.$(document).scrollTop(offset - margin);
-        }
-    }
-});
-
-App.UpdateController = Ember.ObjectController.extend({
-    needs: 'libraryItem',
-
-    progressSummary: function() {
-        var p = this.get('progress'),
-            s = this.get('status');
-        if (p) {
-            var buf = App.appendProgressSuffix(p);
-            if (s && s != 'watching')
-                buf += ' (' + App.STATUS_TEXTS[s] + ')';
-            return buf;
-        } else {
-            return App.STATUS_TEXTS[s];
-        }
-    }.property('progress', 'status'),
-
-    updatedAtFromNow: function() {
-        return moment(this.get('updatedAt')).fromNow();
-    }.property('updatedAt'),
-
-    canEdit: Ember.computed.alias('controllers.libraryItem.canEdit'),
-
-    hasComment: function() {
-        return this.get('comment').length > 0;
-    }.property('comment'),
-
-    actions: {
-        delete: function() {
-            var update = this.get('model');
-            var parent = update.get('item.updates');
-            if (confirm('정말로 삭제하시겠습니까?')) {
-                update.deleteRecord().then(function() {
-                    // XXX: expensive
-                    update.get('item').reload();
-                });
-            }
         }
     }
 });
